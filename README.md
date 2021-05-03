@@ -3,7 +3,7 @@
 # Social-Network ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 Back end for a social media network application. 
-***
+
 
 ## **Table of Contents**
 * [Walkthrough Videos](#walkthrough-videos)
