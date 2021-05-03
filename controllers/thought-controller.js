@@ -1,110 +1,124 @@
-const {Thought, User} = require('../models');
+const { User, Thought } = require('../models');
 
 const thoughtController = {
 
-    //get all thoughts
+    // GET all thoughts
     getAllThoughts(req, res) {
         Thought.find({})
             .select('-__v')
-            .then(dbThoughtData => res.json(dbThoughtData))
+            .sort({ _id: -1 })
+            .then(dbThoughts => res.json(dbThoughts))
             .catch(err => {
-                console.log(err);
-                res.status(500).json(err);
-            });
-    },
-
-    //get a single thought by id
-    getThoughtById({params}, res) {
-        Thought.findOne({_id: params.id})
-            .then(dbThoughtData => {
-                if (!dbThoughtData) {
-                    res.status(404).json({message: 'No thought found with this id.'});
-                    return;
-                }
-                res.json(dbThoughtData);
-            })
-            .catch(err => {
-                console.log(err);
                 res.status(400).json(err);
             });
     },
 
-    //create a new thought and push it to the associated user's thoughts array
-    addThought({body}, res) {
-        //create the new thought
+    // GET one thought
+    getOneThought({ params }, res) {
+        Thought.findOne({ _id: params.thoughtId })
+            .select('-__v')
+            .then(dbThought => {
+                if (!dbThought) return res.status(404).json({ message: 'No thought found with this id!' });
+
+                res.json(dbThought);
+            })
+            .catch(err => {
+                res.status(400).json(err);
+            });
+    },
+
+    // CREATE thought
+    createThought({ body }, res) {
         Thought.create(body)
-            //destruct the _id as we only need that part from the query to add to the user's thoughts array
-            .then(({_id}) => {
+            .then(({ _id }) => {
                 return User.findOneAndUpdate(
-                    {_id: body.userId}, //user id is provided by req.body instead of params per the example challenge data
-                    {$push: {thoughts: _id}}, //add the destructed id to the user's thoughts array
-                    {new: true, runValidators: true} //validate the data and return the updated user data
+                    { _id: body.userId },
+                    { $push: { thoughts: _id }},
+                    { new: true }
                 );
             })
-            .then (dbUserData => {
-                if(!dbUserData) {
-                    res.status(404).json({message: 'No user found with this id.'});
-                    return;
-                }
-                res.json(dbUserData); //respond with the updated user data showing the new thought added to the thoughts array.
+            .then(dbUser => {
+                if (!dbUser) return res.status(404).json({ message: 'No user found with this id!' });
+                
+                res.json(dbUser);
             })
-            .catch(err => res.status(400).json(err));
+            .catch(err => {
+                res.json(err);
+            });
     },
 
-    //update a thought by its id
-    updateThought({params, body}, res) {
-        Thought.findOneAndUpdate({_id:params.id}, body, {new:true, runValidators:true})
-            .then(dbThoughtData => {
-                if (!dbThoughtData) {
-                    res.status(404).json({message: 'No thought found with that id.'});
-                    return;
-                }
-                res.json(dbThoughtData);
-            })
-            .catch (err => res.status(400).json(err));
-    },
-
-    //delete a thought by its id
-    deleteThought({params}, res) {
-        Thought.findOneAndDelete({_id:params.id})
-            .then(dbThoughtData => {
-                if (!dbThoughtData) {
-                    res.status(404).json({message: 'No thought found with that id.'});
-                    return;
-                }
-                res.json(dbThoughtData);
-            })
-            .catch(err => res.status(400).json(err));
-    },
-    
-    //add a reaction to a thought's reactions array
-    addReaction ({params, body}, res) {
+    // UPDATE thought
+    updateThought({ params, body }, res) {
         Thought.findOneAndUpdate(
-            {_id: params.thoughtId},
-            {$push: {reactions: body}},
-            {new: true, runValidators: true}
+            { _id: params.thoughtId },
+            body,
+            { new: true, runValidators: true }
         )
-            .then(dbThoughtData => {
-                if (!dbThoughtData) {
-                    res.status(404).json({message: 'No thought found with that id.'});
-                    return;
-                }
-                res.json(dbThoughtData);
+            .then(dbThought => {
+                if (!dbThought) return res.status(404).json({ message: 'No thought found with this id!' });
+
+                res.json(dbThought);
             })
-            .catch(err => res.json(err));
+            .catch(err => {
+                res.json(err);
+            });
     },
 
-    //delete a reaction from a thought's reactions array
-    deleteReaction ({params, body}, res) {
+    // DELETE thought
+    removeThought({ params, body }, res) {
+        Thought.findOneAndDelete({ _id: params.thoughtId })
+            .then(removedThought => {
+                if (!removedThought) return res.status(404).json({ message: 'No thought found with this id!' });
+
+                res.json(removedThought);
+                return User.findOneAndUpdate(
+                    { _id: body.userId },
+                    { $pull: { thoughts: params.thoughtId } },
+                    { new: true }
+                );
+            })
+            .catch(err => {
+                res.json(err);
+            });
+    },
+
+
+   
+
+    // CREATE reaction
+    addReaction({ params, body }, res) {
         Thought.findOneAndUpdate(
-            {_id: params.thoughtId},
-            {$pull: {reactions: {reactionId: body.reactionId}}},
-            {new: true}
+            { _id: params.thoughtId },
+            { $push: { reactions: body } },
+            { new: true }
         )
-            .then(dbThoughtData => res.json(dbThoughtData))
-            .catch(err => res.json(err));
+            .then(dbThought => {
+                if (!dbThought) return res.status(404).json({ message: 'No thought found with this id!' });
+
+                res.json(dbThought);
+            })
+            .catch(err => {
+                res.json(err);
+            });
+    },
+
+    // DELETE reaction
+    removeReaction({ params }, res) {
+        Thought.findOneAndUpdate(
+            { _id: params.thoughtId },
+            { $pull: { reactions: { reactionId: params.reactionId } } },
+            { new: true }
+        )
+            .then(dbThought => {
+                if (!dbThought) return res.status(404).json({ message: 'No thought found with this id!' });
+
+                res.json(dbThought);
+            })
+            .catch(err => {
+                res.json(err);
+            });
     }
-};
 
+}
 
 module.exports = thoughtController;
