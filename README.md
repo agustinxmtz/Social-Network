@@ -15,13 +15,13 @@ Back end for a social media network application.
 
 ### Walkthrough Videos
 
-* User Routes: [here]()
+* User Routes: [here](https://drive.google.com/file/d/1tEBGdsm1pAXaU8pK2nCqU_BM9VIfJPMV/view)
 
-* Thought Routes: [here]()
+* Thought Routes: [here](https://drive.google.com/file/d/16lIw1PJBqAX7OkuoWf839wrsoQe-3W-W/view)
 
 ### Screenshot
 
-![screenshot]()
+<img src = "./assets/img/Screen.png"/>
 
 ### Technology
 * MongoDB
